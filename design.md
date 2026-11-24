@@ -23,6 +23,25 @@ Lean 4 で動くローカル向けの JSON API。Todo は ID、タイトル、�
 - `SQLite` は永続化ポートを実装する。
 - `Main` は両アダプターの接続、構成、起動を担当する。
 
+### モジュールの依存方向
+
+矢印は依存元から依存先へ向かう。`Main` が HTTP と SQLite のアダプターを接続し、SQLite アダプターは `Application` が定義する `Repository` を実装する。
+
+```mermaid
+flowchart TD
+    Main["Main"]
+    Http["Http"]
+    SQLite["SQLite"]
+    Application["Application / Repository"]
+    Domain["Domain"]
+
+    Main --> Http
+    Main --> SQLite
+    Http --> Application
+    SQLite --> Application
+    Application --> Domain
+```
+
 HTTP ハンドラーから直接 SQL を実行する案はファイル数が少ない。永続化ポートを定義する案は、入力検証とユースケースを HTTP および SQLite から独立させられるため、こちらを採用する。
 
 ## 永続化
