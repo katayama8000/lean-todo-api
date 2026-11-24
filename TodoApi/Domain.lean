@@ -6,6 +6,9 @@ structure Todo where
   completed : Bool
   deriving Repr, BEq
 
+def Todo.canEdit (todo : Todo) : Bool :=
+  !todo.completed
+
 def validateTitle (input : String) : Except String String := do
   let title := input.trimAscii.toString
   if title.isEmpty || title.length > 200 then

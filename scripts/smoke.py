@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from http.client import HTTPConnection
 import json
 import os
@@ -35,8 +36,9 @@ def request(base, method, path, expected, payload=None, raw=None):
         response = error
     with response:
         data = response.read()
-        assert response.code == expected, (method, path, response.code, data)
-        return json.loads(data) if data and expected != 413 else data, response.headers
+        expected_codes = (expected,) if isinstance(expected, int) else expected
+        assert response.code in expected_codes, (method, path, response.code, data)
+        return json.loads(data) if data and response.code != 413 else data, response.headers
 
 
 def check_chunked_limit(base):
@@ -91,8 +93,20 @@ def main():
         assert request(base, "GET", path, 200)[0] == todo
 
         request(base, "PUT", path, 400, {"title": "Missing completed"})
-        updated, _ = request(base, "PUT", path, 200, {"title": "Done", "completed": True})
-        assert updated == {"id": todo["id"], "title": "Done", "completed": True}
+        renamed, _ = request(base, "PUT", path, 200, {"title": "Renamed", "completed": False})
+        assert renamed == {"id": todo["id"], "title": "Renamed", "completed": False}
+
+        def complete(title):
+            return request(base, "PUT", path, (200, 409), {"title": title, "completed": True})[0]
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(complete, ["Done A", "Done B"]))
+        updated, _ = request(base, "GET", path, 200)
+        assert updated["completed"] is True and updated["title"] in ("Done A", "Done B")
+        assert results.count(updated) == 1 and sum("error" in result for result in results) == 1
+        request(base, "PUT", path, 409, {"title": "Rename", "completed": True})
+        request(base, "PUT", path, 409, {"title": "Reopen", "completed": False})
+        assert request(base, "GET", path, 200)[0] == updated
 
         compose("stop", "--timeout", "1", "api")
         compose("rm", "-f", "api")

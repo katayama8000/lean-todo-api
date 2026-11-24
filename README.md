@@ -30,7 +30,7 @@ curl -fsS http://127.0.0.1:8080/todos \
   -d '{"title":"Write a test"}'
 ```
 
-A todo has `id`, `title`, and `completed`. Create defaults to incomplete. PUT replaces both writable fields. The app binds to localhost through Compose and is intended for local use.
+A todo has `id`, `title`, and `completed`. Create defaults to incomplete. PUT replaces both writable fields of an incomplete todo. A PUT on a completed todo returns `409 Conflict`. Completed todos can still be deleted. The app binds to localhost through Compose and is intended for local use.
 
 ## Verify
 

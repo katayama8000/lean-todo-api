@@ -85,8 +85,11 @@ private def item (repository : Repository) (id : Nat) (request : Request Body.St
       | .error message => errorResponse .badRequest message
       | .ok input =>
           match ← Todos.replace repository id input.title input.completed with
-          | .error message => errorResponse .badRequest message
-          | .ok todo => respondWithTodo todo
+          | .error (.invalidTitle message) => errorResponse .badRequest message
+          | .error .notFound => notFound
+          | .error .alreadyCompleted => errorResponse .conflict "Completed todos cannot be edited."
+          | .error .changed => errorResponse .conflict "Todo changed before the update."
+          | .ok todo => jsonResponse .ok (todoJson todo)
   | .delete =>
       if ← repository.delete id then
         Response.new |>.status .noContent |>.bytes ByteArray.empty

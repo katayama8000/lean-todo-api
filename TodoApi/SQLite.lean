@@ -57,10 +57,13 @@ def openRepository (path : System.FilePath) : IO Repository := do
       match inserted[0]? with
       | some todo => return todo
       | none => throw (IO.userError "SQLite insert did not return a todo.")
-    replace := fun id title completed => do
-      let flag := if completed then 1 else 0
-      return (← rows database s!"UPDATE todos SET title = {textLiteral title}, completed = {flag}
-        WHERE id = {id} RETURNING id, title, completed")[0]?
+    replaceIfCompletionMatches := fun todo expectedCompleted => do
+      let flag := if todo.completed then 1 else 0
+      let expectedFlag := if expectedCompleted then 1 else 0
+      let updated ← rows database
+        s!"UPDATE todos SET title = {textLiteral todo.title}, completed = {flag}
+          WHERE id = {todo.id} AND completed = {expectedFlag} RETURNING id, title, completed"
+      return !updated.isEmpty
     delete := fun id => do
       let deleted ← rows database s!"DELETE FROM todos WHERE id = {id} RETURNING id, title, completed"
       return !deleted.isEmpty
