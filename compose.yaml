@@ -1,0 +1,10 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:${TODO_HOST_PORT:-8080}:8080"
+    volumes:
+      - todos:/data
+
+volumes:
+  todos:

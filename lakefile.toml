@@ -1,0 +1,11 @@
+name = "lean-todo-api"
+version = "0.1.0"
+defaultTargets = ["lean-todo-api"]
+
+[[lean_lib]]
+name = "TodoApi"
+globs = ["TodoApi.+"]
+
+[[lean_exe]]
+name = "lean-todo-api"
+root = "Main"
